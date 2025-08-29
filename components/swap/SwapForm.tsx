@@ -1,165 +1,111 @@
 "use client";
-
 import { useState } from "react";
-import FeeLine from "@/components/swap/FeeLine";
-import QuoteSummary from "@/components/swap/QuoteSummary";
-import { fetchQuote, buildSwapTransaction } from "@/lib/jupiter";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { PLATFORM_WALLET } from "@/lib/config";
-import TokenSelect from "@/components/swap/TokenSelect";
-import { TOKENS } from "@/lib/tokenList";
+import TokenPicker from "./TokenPicker";
+import Skeleton from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
+import { TokenInfo } from "@/lib/types";
 
-interface SwapFormProps {
-  affiliate?: string;
-  initialOutMint?: string;
-}
+const DEFAULTS: TokenInfo[] = [
+  { symbol: "SOL", address: "So11111111111111111111111111111111111111112", decimals: 9 },
+  { symbol: "USDC", address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6 },
+];
 
-export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
-  const [inMint, setInMint] = useState(
-    "So11111111111111111111111111111111111111112"
-  );
-  const [outMint, setOutMint] = useState(
-    initialOutMint || "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-  );
-  const [amount, setAmount] = useState("1");
-  const [slippageBps, setSlippageBps] = useState(50);
-  const [quote, setQuote] = useState<any>(null);
+export default function SwapForm() {
+  const { toast, node: Toast } = useToast();
+
+  const [from, setFrom] = useState<TokenInfo | null>(DEFAULTS[0]);
+  const [to, setTo] = useState<TokenInfo | null>(DEFAULTS[1]);
+  const [inAmt, setInAmt] = useState("");
+  const [slippage, setSlippage] = useState("0.5");
   const [loading, setLoading] = useState(false);
 
-  const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
-
-  const affBps = affiliate ? 20 : 0;
-  const platformBps = affiliate ? 10 : 30;
-
-  async function onSwap() {
-    const inToken = TOKENS.find((t) => t.address === inMint);
-    const inDecimals = inToken?.decimals ?? 9;
-    const lamports = BigInt(
-      Math.floor(Number(amount) * Math.pow(10, inDecimals))
-    ).toString();
-
+  async function onQuote() {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const q = await fetchQuote(inMint, outMint, lamports, slippageBps);
-      const route = q.data && q.data.length > 0 ? q.data[0] : null;
-      setQuote(route);
-      if (!route) {
-        setLoading(false);
-        alert("No route found for this pair.");
-        return;
-      }
-
-      if (!publicKey) {
-        setLoading(false);
-        alert("Please connect your wallet first.");
-        return;
-      }
-
-      const referral =
-        affiliate && affiliate.length > 0 ? affiliate : PLATFORM_WALLET;
-
-      const tx = await buildSwapTransaction({
-        quoteResponse: route,
-        userPublicKey: publicKey.toString(),
-        referralAccount: referral,
-      });
-
-      const signature = await sendTransaction(tx, connection);
+      // wire Jupiter here later
+      await new Promise((r) => setTimeout(r, 500));
+      toast("Route updated");
+    } catch (e: any) {
+      toast(e?.message ?? "Failed to get quote");
+    } finally {
       setLoading(false);
-      alert(`Transaction sent! Signature:\n${signature}`);
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-      alert("Failed to execute swap. See console for details.");
     }
   }
 
-  const routeLabel =
-    quote?.marketInfos?.map((m: any) => m.poolLabel).join(" → ") || undefined;
-  const outToken = TOKENS.find((t) => t.address === outMint);
-  const outDecimals = outToken?.decimals ?? 6;
-  const minReceived = quote
-    ? Number(quote.outAmount) / Math.pow(10, outDecimals)
-    : undefined;
-  const impactBps = quote
-    ? Math.round(Number(quote.priceImpactPct) * 10000)
-    : undefined;
-
   return (
-    <div className="w-full max-w-lg sm:max-w-xl mx-auto">
-      <div className="rounded-3xl border border-gray-700 bg-white/10 backdrop-blur-md shadow-xl p-6 sm:p-8">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Swap Tokens</h2>
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5 shadow-2xl">
+      <div className="text-xl font-bold text-white">Swap</div>
 
-        {affiliate && (
-          <div className="mb-4 p-3 rounded-lg bg-gray-800/70 flex items-center justify-between text-sm">
-            <span>
-              Affiliate: {affiliate.slice(0, 4)}…{affiliate.slice(-4)}
-            </span>
-            <button
-              onClick={() => {
-                navigator.clipboard
-                  .writeText(window.location.href)
-                  .then(() => alert("Link copied!"))
-                  .catch(() => alert("Failed to copy link."));
-              }}
-              className="text-teal-400 hover:text-teal-300 transition"
-            >
-              Copy link
-            </button>
-          </div>
-        )}
+      <TokenPicker
+        side="from"
+        token={from}
+        onToken={(t) => setFrom(t)}
+        amount={inAmt}
+        onAmount={setInAmt}
+        list={DEFAULTS}
+      />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Input token and amount */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-300">From Token</label>
-            <TokenSelect selected={inMint} onChange={setInMint} />
-            <label className="text-sm text-gray-300">Amount</label>
-            <input
-              type="number"
-              min="0"
-              className="w-full border border-gray-600 rounded-lg bg-gray-900 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-              placeholder="0.0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
+      <TokenPicker
+        side="to"
+        token={to}
+        onToken={(t) => setTo(t)}
+        list={DEFAULTS}
+      />
 
-          {/* Output token and slippage */}
-          <div className="space-y-2">
-            <label className="text-sm text-gray-300">To Token</label>
-            <TokenSelect selected={outMint} onChange={setOutMint} />
-            <label className="text-sm text-gray-300">Slippage (bps)</label>
-            <input
-              type="number"
-              min="1"
-              max="1000"
-              className="w-full border border-gray-600 rounded-lg bg-gray-900 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
-              value={slippageBps}
-              onChange={(e) => setSlippageBps(Number(e.target.value))}
-            />
-          </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <div className="mb-2 text-xs uppercase tracking-widest text-white/60">Slippage</div>
+          <select
+            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white 
+                       focus:outline-none focus:ring-2 focus:ring-[#8d7aff]"
+            value={slippage}
+            onChange={(e) => setSlippage(e.target.value)}
+          >
+            <option value="0.1">0.1%</option>
+            <option value="0.5">0.5%</option>
+            <option value="1">1%</option>
+            <option value="2">2%</option>
+          </select>
+        </label>
+        <div className="flex items-end">
+          <button
+            onClick={onQuote}
+            className="w-full py-3 rounded-xl font-semibold 
+                       bg-gradient-to-r from-[#8d7aff] via-[#2fd0ff] to-[#14f195]
+                       hover:brightness-110 active:scale-[0.99] transition"
+          >
+            Get Route
+          </button>
         </div>
-
-        <div className="my-6 space-y-2">
-          <FeeLine affBps={affBps} platformBps={platformBps} />
-          <QuoteSummary
-            route={routeLabel}
-            minReceived={minReceived}
-            impactBps={impactBps}
-          />
-        </div>
-
-        <button
-          onClick={onSwap}
-          disabled={loading}
-          className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-lg transition disabled:opacity-50"
-        >
-          {loading ? "Processing..." : "Swap Now"}
-        </button>
       </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-2">
+        {loading ? (
+          <>
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/4" />
+          </>
+        ) : (
+          <>
+            <Row k="Route" v="—" />
+            <Row k="Rate" v="—" />
+            <Row k="Price impact" v="—" />
+            <Row k="Min received" v="—" />
+          </>
+        )}
+      </div>
+
+      {Toast}
+    </div>
+  );
+}
+
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-white/60">{k}</span>
+      <span className="text-white">{v}</span>
     </div>
   );
 }

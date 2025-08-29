@@ -11,17 +11,11 @@ export const metadata: Metadata = {
   description: "Affiliate-enabled token swap powered by Jupiter",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SolanaProviders>
-          {children}
-        </SolanaProviders>
+        <SolanaProviders>{children}</SolanaProviders>
       </body>
     </html>
   );
