@@ -1,3 +1,13 @@
+// lib/types.ts
+
+// ----- UI swap components expect this -----
+export type TokenInfo = {
+  symbol: string;
+  address: string; // mint address
+  decimals: number;
+};
+// -----------------------------------------
+
 export type QuoteSide = "SOL" | "USDC";
 
 export type Affiliate = {
