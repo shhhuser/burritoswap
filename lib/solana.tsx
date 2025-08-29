@@ -1,10 +1,7 @@
-"use client";
-import { ReactNode, useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   PhantomWalletAdapter,
-  SolflareWalletAdapter
+  SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 
 /**
@@ -20,12 +17,12 @@ export function SolanaProviders({ children }: { children: ReactNode }) {
 
   // Instantiate wallet adapters once.
   const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter({ network: 'mainnet-beta' })
-    ],
-    []
-  );
+  () => [
+    new PhantomWalletAdapter(),
+    new SolflareWalletAdapter({ network: WalletAdapterNetwork.Mainnet }),
+  ],
+  []
+);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
