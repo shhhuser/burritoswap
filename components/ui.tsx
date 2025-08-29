@@ -15,7 +15,7 @@ export function Topbar() {
             <LiveDot />
           </div>
           <div className="flex items-center gap-2">
-            {/* You already wrap providers in layout; WalletMultiButton can render on pages */}
+            {/* WalletMultiButton renders on pages */}
             <span className="hidden sm:block text-xs text-white/50">SOLANA</span>
           </div>
         </div>
@@ -35,17 +35,14 @@ export function LiveDot() {
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       className={
         "bg-white/5 border border-white/10 rounded-2xl shadow-2xl shadow-black/40 backdrop-blur-md " +
         "hover:border-white/20 " + className
       }
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
