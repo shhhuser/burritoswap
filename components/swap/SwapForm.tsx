@@ -6,24 +6,21 @@ import QuoteSummary from "@/components/swap/QuoteSummary";
 import { fetchQuote, buildSwapTransaction } from "@/lib/jupiter";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PLATFORM_WALLET } from "@/lib/config";
+import TokenSelect from "@/components/swap/TokenSelect";
+import { TOKENS } from "@/lib/tokenList";
 
 interface SwapFormProps {
   affiliate?: string;
   initialOutMint?: string;
 }
 
-/**
- * Swap form with quoting and transaction sending.
- * If an affiliate wallet is provided via props, that wallet will receive the fee.
- */
 export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
-  // Default to wSOL → USDC
   const [inMint, setInMint] = useState(
     "So11111111111111111111111111111111111111112"
-  );
+  ); // default to wSOL
   const [outMint, setOutMint] = useState(
     initialOutMint || "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-  );
+  ); // default to USDC
   const [amount, setAmount] = useState("1");
   const [slippageBps, setSlippageBps] = useState(50);
   const [quote, setQuote] = useState<any>(null);
@@ -33,18 +30,23 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
 
-  // Fee breakdown: give affiliate some bps if present, otherwise all to platform
+  // Fee breakdown: give some bps to affiliate if provided
   const affBps = affiliate ? 20 : 0;
   const platformBps = affiliate ? 10 : 30;
 
   async function onSwap() {
-    // Convert human amount to lamports (approx. 9 decimals)
-    const lamports = BigInt(Math.floor(Number(amount) * 1e9)).toString();
+    // Find decimals for the selected input token
+    const inToken = TOKENS.find((t) => t.address === inMint);
+    const decimals = inToken?.decimals ?? 9; // fallback to 9 if unknown
+    const factor = Math.pow(10, decimals);
+
+    // Convert human amount to the smallest unit (lamports or token's decimals)
+    const lamports = BigInt(Math.floor(Number(amount) * factor)).toString();
 
     try {
       setLoading(true);
 
-      // Step 1: get a quote from Jupiter
+      // Fetch a quote
       const q = await fetchQuote(inMint, outMint, lamports, slippageBps);
       const route = q.data && q.data.length > 0 ? q.data[0] : null;
       setQuote(route);
@@ -54,25 +56,25 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
         return;
       }
 
-      // Step 2: ensure the user is connected
+      // Ensure the user is connected
       if (!publicKey) {
         setLoading(false);
         alert("Please connect your wallet first.");
         return;
       }
 
-      // Step 3: choose who receives the fee
+      // Determine the fee recipient (affiliate or platform)
       const referral =
         affiliate && affiliate.length > 0 ? affiliate : PLATFORM_WALLET;
 
-      // Step 4: build the swap transaction
+      // Build the swap transaction
       const tx = await buildSwapTransaction({
         quoteResponse: route,
         userPublicKey: publicKey.toString(),
         referralAccount: referral,
       });
 
-      // Step 5: send it through the connected wallet
+      // Send it via the connected wallet
       const signature = await sendTransaction(tx, connection);
       setLoading(false);
       alert(`Transaction sent! Signature:\n${signature}`);
@@ -83,11 +85,11 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
     }
   }
 
-  // Derive display values from the quote
+  // Summary fields for the quote
   const routeLabel =
     quote?.marketInfos?.map((m: any) => m.poolLabel).join(" → ") || undefined;
   const minReceived = quote
-    ? Number(quote.outAmount) / 1e6 // rough conversion assuming 6 decimals
+    ? Number(quote.outAmount) / 1e6 // assumes output token has 6 decimals; refine if needed
     : undefined;
   const impactBps = quote
     ? Math.round(Number(quote.priceImpactPct) * 10000)
@@ -98,27 +100,19 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
       <h2 className="text-xl font-semibold mb-4">Swap</h2>
 
       <div className="grid gap-3">
-        {/* From mint */}
+        {/* Input token selector */}
         <div className="grid gap-1">
-          <label className="text-sm text-gray-600">From (mint)</label>
-          <input
-            className="w-full border rounded-xl px-3 py-2"
-            value={inMint}
-            onChange={(e) => setInMint(e.target.value)}
-          />
+          <label className="text-sm text-gray-600">From</label>
+          <TokenSelect selected={inMint} onChange={setInMint} />
         </div>
 
-        {/* To mint */}
+        {/* Output token selector */}
         <div className="grid gap-1">
-          <label className="text-sm text-gray-600">To (mint)</label>
-          <input
-            className="w-full border rounded-xl px-3 py-2"
-            value={outMint}
-            onChange={(e) => setOutMint(e.target.value)}
-          />
+          <label className="text-sm text-gray-600">To</label>
+          <TokenSelect selected={outMint} onChange={setOutMint} />
         </div>
 
-        {/* Amount */}
+        {/* Amount input */}
         <div className="grid gap-1">
           <label className="text-sm text-gray-600">Amount</label>
           <input
@@ -130,7 +124,7 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
           />
         </div>
 
-        {/* Slippage */}
+        {/* Slippage input */}
         <div className="grid gap-1">
           <label className="text-sm text-gray-600">Slippage (bps)</label>
           <input
@@ -143,16 +137,15 @@ export default function SwapForm({ affiliate, initialOutMint }: SwapFormProps) {
           />
         </div>
 
-        {/* Fee breakdown */}
+        {/* Fee and quote summaries */}
         <FeeLine affBps={affBps} platformBps={platformBps} />
-
-        {/* Quote summary */}
         <QuoteSummary
           route={routeLabel}
           minReceived={minReceived}
           impactBps={impactBps}
         />
 
+        {/* Swap button */}
         <button
           onClick={onSwap}
           disabled={loading}
