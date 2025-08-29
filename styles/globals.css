@@ -1,19 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import "@solana/wallet-adapter-react-ui/styles.css";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap');
 
+/* Reset margin/padding and set a dark gradient background */
 html,
 body {
   height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  background: linear-gradient(145deg, #0b1229, #0e142e, #12162e);
+  color: #f3f4f6;
 }
 
+/* Optional: center content on the page */
 body {
-  @apply bg-soft text-ink antialiased;
-}
-
-.card {
-  @apply bg-white rounded-2xl shadow-burrito border border-line;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 4rem;
 }
