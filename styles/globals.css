@@ -1,6 +1,17 @@
+/* === Tailwind layers (must be first) === */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3rd-party UI (Solana wallet modal) */
 @import "@solana/wallet-adapter-react-ui/styles.css";
 
-/* Reset margin/padding and set a dark gradient background */
+/* App theme */
+:root {
+  color-scheme: dark;
+}
+
+/* Background + typography */
 html,
 body {
   height: 100%;
@@ -11,10 +22,5 @@ body {
   color: #f3f4f6;
 }
 
-/* Optional: center content on the page */
-body {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 4rem;
-}
+/* Let pages control layout; no global flex layout here */
+body {}
