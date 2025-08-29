@@ -1,21 +1,20 @@
-// lib/solana.tsx
 "use client";
 import { ReactNode, useMemo } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 
 /**
- * Provides Solana connection and wallet adapters.
- * Reads the RPC endpoint from environment variables (NEXT_PUBLIC_SOLANA_RPC_URL).
+ * Wrap your app in <SolanaProviders> so wallet connections work.
  */
 export function SolanaProviders({ children }: { children: ReactNode }) {
-  // Use env RPC or fallback to mainnet.
+  // Read RPC endpoint from env; default to mainnet if not set.
   const endpoint =
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+    "https://api.mainnet-beta.solana.com";
 
-  // Instantiate wallet adapters once.
+  // Instantiate wallet adapters only once.
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
