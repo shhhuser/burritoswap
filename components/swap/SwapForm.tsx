@@ -13,8 +13,8 @@ const DEFAULTS: TokenInfo[] = [
 export default function SwapForm() {
   const { toast, node: Toast } = useToast();
 
-  const [from, setFrom] = useState<TokenInfo | null>(DEFAULTS[0]);
-  const [to, setTo] = useState<TokenInfo | null>(DEFAULTS[1]);
+  const [from, setFrom] = useState<TokenInfo | null>(DEFAULTS[0] ?? null);
+  const [to, setTo] = useState<TokenInfo | null>(DEFAULTS[1] ?? null);
   const [inAmt, setInAmt] = useState("");
   const [slippage, setSlippage] = useState("0.5");
   const [loading, setLoading] = useState(false);
