@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "es2020"],
+    "target": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -13,16 +13,12 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["components/*"],
-      "@/lib/*": ["lib/*"],
-      "@/styles/*": ["styles/*"]
+      "@/*": ["*"]
     },
     "allowJs": true,
     "incremental": true,
-    "plugins": [
-      { "name": "next" }
-    ]
+    "plugins": [{ "name": "next" }],
+    "noUncheckedIndexedAccess": true
   },
   "include": [
     "next-env.d.ts",
